@@ -3,6 +3,10 @@ import gdb
 # moze tutaj chce ze structgen klase do listy a potem zrobic
 # dziedziczenie i w potomnej klasie __iter__
 
+from frtosdbg.structgen import get_class_by_typestr
+
+ListClass = get_class_by_typestr('List_t')
+
 class FreeRTOSList():
 
     def __init__(self, lst, cast_type_str="void*"):
