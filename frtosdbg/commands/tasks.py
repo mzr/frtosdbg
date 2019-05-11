@@ -2,7 +2,7 @@ import gdb
 import frtosdbg.commands
 from frtosdbg.commands.freertos import freertos
 
-from frtosdbg.structgen import structgen
+from frtosdbg.structgen import structgen_of_ptr
 
 from frtosdbg.common.list import FreeRTOSList
 
@@ -21,7 +21,7 @@ def print_task_rtos_list(rtos_list):
     l = FreeRTOSList(rtos_list, "TaskHandle_t")
 
     for i, item in enumerate(l):
-        task = structgen(item)
+        task = structgen_of_ptr(item)
         line1 = "{}.\t({}) {}".format(i, item.type, task.base)
         line2 = "\tname: {}".format(task.pcTaskName)
         line3 = "\tpriority: {}".format(task.uxPriority)

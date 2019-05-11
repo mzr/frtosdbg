@@ -3,7 +3,7 @@ from frtosdbg.commands import Command
 from frtosdbg.commands.freertos import freertos
 
 from frtosdbg.common.list import FreeRTOSList
-from frtosdbg.structgen import structgen
+from frtosdbg.structgen import structgen_of_ptr
 
 active_queues = {}
 
@@ -14,7 +14,7 @@ class queueCreatedBP(gdb.Breakpoint):
 
     def stop(self):
         q = gdb.newest_frame().read_var('pxNewQueue')
-        active_queues[int(q)] = structgen(q, typestr='QueueHandle_t')
+        active_queues[int(q)] = structgen_of_ptr(q, typestr='QueueHandle_t')
         return False
 
 
