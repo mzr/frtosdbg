@@ -9,7 +9,10 @@ class FreeRTOSList(ListClass):
     def __init__(self, lst, cast_type_str="void*"):
         # is this a correct way?
         super().__init__(lst)
-        self.cast_type = gdb.lookup_type(cast_type_str)
+        print(dir(self))
+        print(self.base.type) # to jest List_t !!!!!!!
+        print(self.xListEnd)
+        self.cast_type = gdb.lookup_type(cast_type_str) # no type void* !
         # why cant i use self.xListEnd
         # self.end_marker = self.xListEnd
         self.end_marker = lst['xListEnd']
