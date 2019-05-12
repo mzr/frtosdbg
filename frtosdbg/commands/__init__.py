@@ -2,6 +2,8 @@ import gdb
 import functools
 import frtosdbg
 
+commands = []
+
 class _Command(gdb.Command):
     def __init__(self, complete, parent, prefix, function):
 
@@ -15,6 +17,8 @@ class _Command(gdb.Command):
         else:
             # root command
             self.full_command_name = self.local_command_name
+
+        commands.append(self.full_command_name)
 
         # None is for default behaviour as in vanilla command without
         # completer_class passed
