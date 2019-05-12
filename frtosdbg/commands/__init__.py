@@ -1,4 +1,6 @@
 import gdb
+import functools
+import frtosdbg
 
 class _Command(gdb.Command):
     def __init__(self, complete, parent, prefix, function):
@@ -42,3 +44,14 @@ def Command(complete=gdb.COMPLETE_NONE, parent=None, prefix=False):
 
 def PrefixCommand(complete=gdb.COMPLETE_NONE, parent=None):
     return Command(complete, parent, prefix=True)
+
+# Other decorators
+
+def OnlyWhenTaskListsAreInitialized(function):
+    @functools.wraps(function)
+    def _OnlyWhenTaskListsAreInitialized(*a, **kw):
+        if frtosdbg.commands.tasks.are_initialized == True:
+            return function(*a, **kw)
+        else:
+            print("%s: Task lists are not initialized yet." % function.__name__)
+    return _OnlyWhenTaskListsAreInitialized

@@ -6,6 +6,17 @@ from frtosdbg.structgen import structgen_of_ptr
 
 from frtosdbg.common.list import FreeRTOSList
 
+are_initialized = False
+
+class InitTaskListsBP(gdb.Breakpoint):
+    def __init__(self):
+        super().__init__(function='prvInitialiseTaskLists', internal=True, temporary=True)
+
+    def stop(self):
+        global are_initialized
+        are_initialized = True
+
+InitTaskListsBP()
 
 def print_task_list_ptr(task_list_symbol_name):
     head = gdb.parse_and_eval(task_list_symbol_name).dereference()
@@ -52,6 +63,7 @@ def tasks_completer(text, word):
 
 
 @frtosdbg.commands.Command(parent=freertos, complete=tasks_completer)
+@frtosdbg.commands.OnlyWhenTaskListsAreInitialized
 def tasks(*args):
     if len(args) == 0:
         print_ready_tasks_lists()
