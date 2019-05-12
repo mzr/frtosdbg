@@ -1,28 +1,74 @@
 import gdb
 import frtosdbg.commands
 from frtosdbg.commands.freertos import freertos
-
 from frtosdbg.structgen import structgen_of_ptr
-
 from frtosdbg.common.list import FreeRTOSList
 
-
-def print_task_list_ptr(task_list_symbol_name):
-    head = gdb.parse_and_eval(task_list_symbol_name).dereference()
-    print_task_rtos_list(head)
-
-
-def print_task_list(task_list_symbol_name):
-    head = gdb.parse_and_eval(task_list_symbol_name)
-    print_task_rtos_list(head)
+task_lists = {
+    'ready': 'pxReadyTasksLists',
+    'pending': 'xPendingReadyList',
+    'suspended': 'xSuspendedTaskList',
+    'blocked': 'pxDelayedTaskList',
+}
 
 
-def print_task_rtos_list(rtos_list):
-    l = FreeRTOSList(rtos_list, "TaskHandle_t")
+class TaskList(FreeRTOSList):
+    def __init__(self, gdb_value_ptr):
+        super().__init__(gdb_value_ptr, "TaskHandle_t")
 
-    for i, item in enumerate(l):
+
+class TaskListArray:
+    # might want gdb_value_ptr here
+    def __init__(self, gdb_value):
+        self.base = gdb_value.address
+        self.size = gdb_value.type.range()[1] + 1
+        self.task_lists = []
+
+        for idx in range(self.size):
+            gdb_value_task_list = gdb_value[idx]
+            self.task_lists.append(TaskList(gdb_value_task_list.address))
+
+    def __iter__(self):
+        for task_list in self.task_lists:
+            for task in task_list:
+                yield task
+
+
+class UnknownTypeCodeForTaskList(Exception):
+    pass
+
+
+class UnknownTaskListName(Exception):
+    pass
+
+
+def dispatch_task_list_of_sym_str(sym_str):
+    gdb_value = gdb.parse_and_eval(sym_str)
+    type_code = gdb_value.type.strip_typedefs().code
+
+    if type_code == gdb.TYPE_CODE_PTR:
+        task_list = TaskList(gdb_value)
+    elif type_code == gdb.TYPE_CODE_STRUCT:
+        task_list = TaskList(gdb_value.address)
+    elif type_code == gdb.TYPE_CODE_ARRAY:
+        task_list = TaskListArray(gdb_value)
+    else:
+        raise UnknownTypeCodeForTaskList("Type code: %d" % type_code)
+
+    return task_list
+
+
+def init_task_lists():
+    for k, v in task_lists.items():
+        task_list = dispatch_task_list_of_sym_str(v)
+        task_lists[k] = (v, task_list)
+
+
+def print_task_list(task_list):
+
+    for idx, item in enumerate(task_list):
         task = structgen_of_ptr(item)
-        line1 = "{}.\t({}) {}".format(i, item.type, task.base)
+        line1 = "{}.\t({}) {}".format(idx, item.type, task.base)
         line2 = "\tname: {}".format(task.pcTaskName)
         line3 = "\tpriority: {}".format(task.uxPriority)
         print(line1)
@@ -38,15 +84,6 @@ def print_task_rtos_list(rtos_list):
             pass
 
 
-def print_ready_tasks_lists():
-    readyLists = gdb.parse_and_eval('pxReadyTasksLists')
-    r = readyLists.type.range()
-
-    for idx in range(r[0], r[1] + 1):
-        rtos_list = readyLists[idx]
-        print_task_rtos_list(rtos_list)
-
-
 def tasks_completer(text, word):
     return ["ready", "blocked", "suspended", "pending"]
 
@@ -54,19 +91,14 @@ def tasks_completer(text, word):
 @frtosdbg.commands.Command(parent=freertos, complete=tasks_completer)
 def tasks(*args):
     if len(args) == 0:
-        print_ready_tasks_lists()
-        print_task_list('xPendingReadyList')
-        print_task_list('xSuspendedTaskList')
-        print_task_list_ptr('pxDelayedTaskList')
+        for _, v in task_lists.items():
+            print_task_list(v[1])
         return
 
-    if args[0] == "ready":
-        print_ready_tasks_lists()
-    elif args[0] == "pending":
-        print_task_list('xPendingReadyList')
-    elif args[0] == "suspended":
-        print_task_list('xSuspendedTaskList')
-    elif args[0] == "blocked":
-        print_task_list_ptr('pxDelayedTaskList')
+    if args[0] in task_lists:
+        print_task_list(task_lists[args[0]][1])
     else:
-        print("unknown argument")
+        raise UnknownTaskListName
+
+
+init_task_lists()
