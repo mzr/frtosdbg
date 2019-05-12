@@ -11,6 +11,17 @@ task_lists = {
     'blocked': 'pxDelayedTaskList',
 }
 
+are_initialized = False
+
+class InitTaskListsBP(gdb.Breakpoint):
+    def __init__(self):
+        super().__init__(function='prvInitialiseTaskLists', internal=True, temporary=True)
+
+    def stop(self):
+        global are_initialized
+        are_initialized = True
+
+InitTaskListsBP()
 
 class TaskList(FreeRTOSList):
     def __init__(self, gdb_value_ptr):
@@ -89,6 +100,7 @@ def tasks_completer(text, word):
 
 
 @frtosdbg.commands.Command(parent=freertos, complete=tasks_completer)
+@frtosdbg.commands.OnlyWhenTaskListsAreInitialized
 def tasks(*args):
     if len(args) == 0:
         for _, v in task_lists.items():
