@@ -42,13 +42,7 @@ def construct_class(gdb_base_type):
     """
     className = base_type_tag(gdb_base_type)
 
-    print("constructing class:")
-    print(gdb_base_type)
-
-
     def constructor(self, base):
-        print("constructing object")
-        print(base.type.target())
         self.base = base
 
     d = {}

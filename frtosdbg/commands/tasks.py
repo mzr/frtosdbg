@@ -55,7 +55,7 @@ class UnknownTaskListName(Exception):
 
 def dispatch_task_list_of_sym_str(sym_str):
     gdb_value = gdb.parse_and_eval(sym_str)
-    type_code = gdb_value.type.strip_typedefs().code
+    type_code = gdb_value.type.strip_typedefs().unqualified().code
 
     if type_code == gdb.TYPE_CODE_PTR:
         task_list = TaskList(gdb_value)
