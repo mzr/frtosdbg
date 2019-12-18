@@ -8,7 +8,7 @@ task_lists = {
     'ready': 'pxReadyTasksLists',
     'pending': 'xPendingReadyList',
     'suspended': 'xSuspendedTaskList',
-    'blocked': 'pxDelayedTaskList',
+    'blocked': 'pxDelayedTaskList', # changing ptr
 }
 
 are_initialized = False
